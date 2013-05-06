@@ -59,10 +59,10 @@ class Uci
   # send "ucinewgame" to engine, reset interal board to standard starting
   # layout
   def new_game!
+    @fen = nil
     write_to_engine('ucinewgame')
     reset_board!
     set_startpos!
-    @fen = nil
   end
 
   # true if no moves have been recorded yet
@@ -265,7 +265,7 @@ class Uci
     unless fen =~ fen_pattern
       raise FenFormatError, "Fenstring not correct: #{fen}. Expected to match #{fen_pattern}"
     end
-    reset_board!
+    new_game!
     fen.split(' ').first.split('/').reverse.each_with_index do |rank, rank_index|
       file_index = 0
       rank.split('').each do |file|
@@ -277,7 +277,6 @@ class Uci
         end
       end
     end
-    new_game!
     @fen = fen
     send_position_to_engine
   end
