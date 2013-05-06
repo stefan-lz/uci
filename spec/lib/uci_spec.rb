@@ -6,7 +6,7 @@ describe Uci do
     Uci.any_instance.stub(:check_engine)
     Uci.any_instance.stub(:open_engine_connection)
     Uci.any_instance.stub(:get_engine_name)
-    Uci.any_instance.stub(:new_game!)
+    Uci.any_instance.stub(:write_to_engine)
   end
 
   subject do
@@ -120,9 +120,21 @@ describe Uci do
       # given
       subject.stub!( :send_position_to_engine )
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
+
       # expect
       subject.fenstring.should == "r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR"
     end
+
+    it "should set the board layout from a passed LONG fenstring a second time" do
+      # given
+      subject.stub!( :send_position_to_engine )
+      subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
+      subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
+
+      # expect
+      subject.fenstring.should == "r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR"
+    end
+
     it "should raise an error is the passed fen format is incorret" do
       # try to use a short fen where we neeed a long fen
       lambda { subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR") }.should raise_exception FenFormatError

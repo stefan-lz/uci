@@ -109,7 +109,6 @@ class Uci
     end
   end
 
-  # tell the engine what the current board layout it, get its best move AND
   # execute that move on the current board.
   def go!
     send_position_to_engine
@@ -266,6 +265,7 @@ class Uci
       raise FenFormatError, "Fenstring not correct: #{fen}. Expected to match #{fen_pattern}"
     end
     new_game!
+    reset_board!
     fen.split(' ').first.split('/').reverse.each_with_index do |rank, rank_index|
       file_index = 0
       rank.split('').each do |file|
@@ -277,6 +277,7 @@ class Uci
         end
       end
     end
+
     @fen = fen
     send_position_to_engine
   end
