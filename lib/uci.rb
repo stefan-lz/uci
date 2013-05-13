@@ -53,7 +53,7 @@ class Uci
   # true if engine is ready, false if not yet ready
   def ready?
     write_to_engine('isready')
-    read_from_engine == "readyok"
+    expect_from_engine("readyok") != nil
   end
 
   # send "ucinewgame" to engine, reset interal board to standard starting
@@ -76,9 +76,7 @@ class Uci
   # best option available.
   def bestmove
     write_to_engine("go movetime #{@movetime}")
-    until (move_string = read_from_engine).to_s.size > 1
-      sleep(0.25)
-    end
+    move_string = expect_from_engine("bestmove")
     if move_string =~ /^bestmove/
       if move_string =~ /^bestmove\sa1a1/ # fruit and rybka
         raise EngineResignError, "Engine Resigns. Check Mate? #{move_string}"
@@ -342,10 +340,14 @@ class Uci
     board_str
   end
 
-
   # return the current engine name
   def engine_name
     @engine_name
+  end
+
+  def close()
+    @engine_stdin.close if @engine_stdin
+    @engine_stdout.close if @engine_stdout
   end
 
 protected
@@ -366,19 +368,24 @@ protected
     end
   end
 
+  def expect_from_engine(command, timeout=nil)
+    response = nil
+    while true
+      response = read_from_engine
+      break if response =~ /^#{command}.*/
+    end
+
+    return response
+  end
+
   def read_from_engine(strip_cr=true)
-    log("\tread_from_engine") #XXX
     response = ""
     while @engine_stdout.ready?
-      unless (response = @engine_stdout.readline) =~ /^info/
-        log("\t\tENGINE:\t'#{response}'")
-      end
+      response = @engine_stdout.readline.to_s.strip
+      log("\t\tENGINE:\t'#{response}'") if !response.empty?
     end
-    if strip_cr && response.split('').last == "\n"
-      response.chop
-    else
-      response
-    end
+
+    response
   end
 
 private
@@ -443,6 +450,7 @@ private
   def open_engine_connection(engine_path)
     @engine_stdin, @engine_stdout = Open3.popen2e(engine_path)
   end
+
 
   def require_keys!(hash, *required_keys)
     required_keys.flatten.each do |required_key|
