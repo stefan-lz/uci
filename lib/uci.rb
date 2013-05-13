@@ -45,7 +45,7 @@ class Uci
 
     check_engine(options)
     set_engine_name(options)
-    open_engine_connection(options[:engine_path])
+    open_engine_connection(options[:engine_path], options[:engine_args])
     set_engine_options(options[:options]) if !options[:options].nil?
     new_game!
   end
@@ -447,10 +447,13 @@ private
     puts "DEBUG (#{engine_name}): #{message}" if @debug
   end
 
-  def open_engine_connection(engine_path)
-    @engine_stdin, @engine_stdout = Open3.popen2e(engine_path)
+  def open_engine_connection(engine_path, engine_args)
+    if engine_args
+      @engine_stdin, @engine_stdout = Open3.popen2e(engine_path, engine_args)
+    else
+      @engine_stdin, @engine_stdout = Open3.popen2e(engine_path)
+    end
   end
-
 
   def require_keys!(hash, *required_keys)
     required_keys.flatten.each do |required_key|
