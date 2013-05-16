@@ -3,6 +3,7 @@
 
 require 'open3'
 require 'io/wait'
+require 'timeout'
 
 class Uci
   attr_reader :moves, :debug
@@ -345,9 +346,18 @@ class Uci
     @engine_name
   end
 
-  def close()
-    @engine_stdin.close if @engine_stdin
-    @engine_stdout.close if @engine_stdout
+  def close(timeout=1)
+    begin
+      timeout(timeout) do
+        write_to_engine("quit")
+        @engine_stdin.close
+        @engine_stdout.close
+        @wait_thr.value
+      end
+    rescue Timeout::Error
+      log("killing engine '#{@engine_name}', PID: #{@wait_thr.pid}")
+      Process.kill("INT", @wait_thr.pid)
+    end
   end
 
 protected
@@ -449,9 +459,9 @@ private
 
   def open_engine_connection(engine_path, engine_args)
     if engine_args
-      @engine_stdin, @engine_stdout = Open3.popen2e(engine_path, engine_args)
+      @engine_stdin, @engine_stdout, @wait_thr = Open3.popen2e(engine_path, engine_args)
     else
-      @engine_stdin, @engine_stdout = Open3.popen2e(engine_path)
+      @engine_stdin, @engine_stdout, @wait_thr = Open3.popen2e(engine_path)
     end
   end
 
