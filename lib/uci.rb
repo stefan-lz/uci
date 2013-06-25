@@ -346,9 +346,9 @@ class Uci
     @engine_name
   end
 
-  def close(timeout=1)
+  def close(timeout=1000)
     begin
-      timeout(timeout) do
+      timeout(timeout/1000.0) do
         write_to_engine("quit")
         @engine_stdin.close
         @engine_stdout.close
@@ -378,24 +378,24 @@ protected
     end
   end
 
-  def expect_from_engine(command, timeout=nil)
+  def expect_from_engine(command, timeout=500)
     response = nil
-    while true
-      response = read_from_engine
-      break if response =~ /^#{command}.*/
+    timeout(timeout/1000.0) do
+      while true
+        response = read_from_engine
+        break if response =~ /^#{command}.*/
+      end
     end
-
     return response
   end
 
-  def read_from_engine(strip_cr=true)
+  def read_from_engine()
     response = ""
     while @engine_stdout.ready?
       response = @engine_stdout.readline.to_s.strip
       log("\t\tENGINE:\t'#{response}'") if !response.empty?
     end
-
-    response
+    return response
   end
 
 private
